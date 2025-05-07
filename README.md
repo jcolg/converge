@@ -3,7 +3,7 @@
 [![View on GitHub Pages](https://img.shields.io/badge/live-demo-blue?logo=github)](https://jcolg.github.io/converge-daily-game/)
 
 A high-difficulty, daily word-association puzzle game.  
-Guess the single word that connects 3–7 clues. You get 10 guesses — use your hints wisely.
+Guess the word that connects the clues. Start with 3, unlock more hints as needed, and aim for the fewest possible.
 
 - No easy mode. No random puzzles. Just one daily challenge.
 - Built with HTML, CSS, and vanilla JavaScript.
