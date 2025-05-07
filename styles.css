@@ -1,0 +1,113 @@
+/* style.css */
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f6f6f6;
+  margin: 0;
+  padding: 20px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+h1 {
+  margin-bottom: 5px;
+  font-size: 2rem;
+}
+
+#clues {
+  margin: 20px auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  max-width: 600px;
+}
+
+.clue {
+  background: #fff;
+  border: 2px solid #ccc;
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-size: 1rem;
+  flex: 1 1 auto;
+  min-width: 100px;
+  text-align: center;
+}
+
+#input-area {
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+input[type="text"] {
+  padding: 10px;
+  width: 80%;
+  max-width: 300px;
+  font-size: 1rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+button {
+  padding: 10px 15px;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 5px;
+  border: none;
+  background-color: #222;
+  color: white;
+}
+
+button:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+}
+
+#guess-log {
+  margin-top: 20px;
+  text-align: center;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.guess-entry {
+  background: #fff;
+  padding: 8px 12px;
+  margin-bottom: 5px;
+  border-radius: 5px;
+  border-left: 4px solid #222;
+  text-align: left;
+}
+
+#score-area {
+  margin-top: 30px;
+  font-weight: bold;
+  font-size: 1.2rem;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 600px) {
+  .clue {
+    min-width: 80px;
+    font-size: 0.95rem;
+  }
+
+  input[type="text"] {
+    width: 90%;
+  }
+
+  button {
+    width: 90%;
+    max-width: 300px;
+  }
+
+  #input-area {
+    width: 100%;
+  }
+}

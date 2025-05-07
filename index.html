@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Converge — Daily Puzzle</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <h1>🧠 Converge</h1>
+  <p><strong>Daily Puzzle — <span id="date"></span></strong></p>
+
+  <div id="clues">
+    <!-- Clues will be inserted here -->
+  </div>
+
+  <div id="input-area">
+    <input type="text" id="guessInput" placeholder="Enter your guess..." />
+    <button onclick="submitGuess()">Submit</button>
+    <button onclick="getHint()">Get Another Clue</button>
+  </div>
+
+  <div id="guess-log">
+    <h3>Guesses</h3>
+    <div id="guesses"></div>
+  </div>
+
+  <div id="score-area"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>

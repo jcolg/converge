@@ -1,0 +1,30 @@
+{
+  "2025-05-07": {
+    "clues": ["thread", "weave", "pattern", "needle", "stitch", "textile", "loom"],
+    "answer": "fabric"
+  },
+  "2025-05-08": {
+    "clues": ["echo", "mirror", "twin", "duplicate", "clone", "replica", "match"],
+    "answer": "copy"
+  },
+  "2025-05-09": {
+    "clues": ["curtain", "encore", "applause", "mask", "lines", "cast", "drama"],
+    "answer": "theater"
+  },
+  "2025-05-10": {
+    "clues": ["roots", "family", "origin", "branch", "ancestry", "heritage", "lineage"],
+    "answer": "genealogy"
+  },
+  "2025-05-11": {
+    "clues": ["stream", "viral", "comment", "reel", "share", "hashtag", "timeline"],
+    "answer": "social"
+  },
+  "2025-05-12": {
+    "clues": ["diamond", "crack", "fault", "earthquake", "plate", "strain", "rupture"],
+    "answer": "stress"
+  },
+  "2025-05-13": {
+    "clues": ["pressure", "simmer", "vent", "explode", "steam", "build", "release"],
+    "answer": "boil"
+  }
+}
