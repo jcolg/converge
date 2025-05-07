@@ -4,11 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Converge — Daily Puzzle</title>
-  <link rel="stylesheet" href="gameStyles.css" />
+  <link rel="stylesheet" href="static/gameStyles.css" />
 </head>
 <body>
   <h1>🧠 Converge</h1>
-  <p><strong>Daily Puzzle — <span id="date"></span></strong></p>
+  <!-- <p><strong>Puzzle # — <span id="date"></span></strong></p> -->
+  <p><strong>Puzzle #<span id="puzzle-number"></span> - <span id="date"></span></strong></p>
+
 
   <div id="clues">
     <!-- Clues will be inserted here -->
@@ -21,12 +23,13 @@
   </div>
 
   <div id="guess-log">
-    <h3>Guesses</h3>
+    <!-- <h3>Guesses</h3> -->
+    <h3 id="guess-stats">Guesses: 0 Hints: 0</h3>
     <div id="guesses"></div>
   </div>
 
   <div id="score-area"></div>
 
-  <script src="script.js"></script>
+  <script src="static/script.js"></script>
 </body>
 </html>
