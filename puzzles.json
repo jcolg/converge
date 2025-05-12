@@ -26,5 +26,25 @@
   "2025-05-13": {
     "clues": ["pressure", "simmer", "vent", "explode", "steam", "build", "release"],
     "answer": "boil"
+  },
+  "2025-05-14": {
+    "clues": ["veil", "conceal", "cipher", "onion", "layers", "decode", "facade"],
+    "answer": "mystery"
+  },
+  "2025-05-15": {
+    "clues": ["absence", "invisible", "gap", "void", "missing", "erased", "space"],
+    "answer": "nothing"
+  },
+  "2025-05-16": {
+    "clues": ["logic", "conclusion", "if", "therefore", "premise", "syllogism", "deduction"],
+    "answer": "argument"
+  },
+  "2025-05-17": {
+    "clues": ["ancient", "cipher", "stone", "translate", "hieroglyph", "decode", "inscription"],
+    "answer": "rosetta"
+  },
+  "2025-05-18": {
+    "clues": ["loop", "error", "trap", "halt", "condition", "infinite", "debug"],
+    "answer": "bug"
   }
 }
