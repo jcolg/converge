@@ -30,26 +30,30 @@ document.getElementById("date").innerText = formattedDate.replace(/^(\w+)\s/, "$
 
 document.getElementById("clues").innerText = "Loading puzzle...";
 
-fetch("GloVe/all_rankings.json")
-  .then((res) => res.json())
-  .then((rankingData) => {
-    allRankings = rankingData;
-    const keys = Object.keys(allRankings);
-    if (puzzleNumber <= keys.length) {
-      answer = keys[puzzleNumber - 1];
-      currentRanking = allRankings[answer];
-      allClueWords = Object.entries(currentRanking)
-        .sort((a, b) => a[1] - b[1])
-        .map(([word]) => word)
-        .filter(word => word !== answer && !word.startsWith(answer) && !answer.startsWith(word));
-      renderClues();
-      updateGuessStats();
-      document.getElementById("guessInput").focus();
-    } else {
-      document.getElementById("clues").innerText = "No puzzle available for today.";
-      disableInputs();
-    }
+fetch("puzzle_schedule.json")
+  .then(res => res.json())
+  .then(schedule => {
+    answer = schedule[today];
+    if (!answer) throw new Error("No answer found for today");
+    return fetch(`rankings_split/${answer}.json`);
+  })
+  .then(res => res.json())
+  .then(data => {
+    currentRanking = data;
+    allClueWords = Object.entries(currentRanking)
+      .sort((a, b) => a[1] - b[1])
+      .map(([word]) => word)
+      .filter(word => word !== answer && !word.startsWith(answer) && !answer.startsWith(word));
+    renderClues();
+    updateGuessStats();
+    document.getElementById("guessInput").focus();
+  })
+  .catch(err => {
+    document.getElementById("clues").innerText = "No puzzle available for today.";
+    disableInputs();
+    console.error("Puzzle load error:", err);
   });
+
 
 const guessInput = document.getElementById("guessInput");
 if (guessInput) {
