@@ -109,13 +109,13 @@ function getHint() {
 
   // Only get a clue if there's a next clue to reveal (after the first 3 clues)
   if (clueIndex < currentRanking.length) {
-    // Get the clues from ranks below 23 or above 25
+    // Get the clues from ranks below 23 or above 25, excluding rank 1 (the answer)
     const sortedWords = Object.entries(currentRanking)
       .sort((a, b) => a[1] - b[1]) // Sort by ranking, ascending
       .map(([word, rank]) => ({ word, rank }));
 
-    // Select clues ranked below 23 or above 25
-    const nextClue = sortedWords.filter(({ rank }) => (rank < 23 || rank > 25))[clueIndex - 3]; // Start after the first 3
+    // Select clues ranked below 23 or above 25, excluding rank 1
+    const nextClue = sortedWords.filter(({ rank }) => (rank !== 1 && (rank < 23 || rank > 25)))[clueIndex - 3]; // Start after the first 3
 
     if (nextClue) {
       const span = document.createElement("div");
