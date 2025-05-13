@@ -67,14 +67,9 @@ if (guessInput) {
 
 // Normalize input word (handles plurals)
 function normalizeWord(word) {
-  word = word.toLowerCase();
-  
-  // Check for plural forms (words ending in "s" or "es")
-  if ((word.endsWith('es') && word.length > 2) || (word.endsWith('s') && word.length > 1)) {
-    return word.slice(0, -1); // Remove 's' or 'es' if it's plural (e.g., "puzzles" -> "puzzle")
-  } else {
-    return word; // If no plural form, return as is
-  }
+  // Use pluralize.js to convert plural to singular
+  const singular = pluralize.singular(word.toLowerCase());
+  return singular;
 }
 
 function updateGuessStats() {
@@ -82,24 +77,56 @@ function updateGuessStats() {
   stats.innerText = `Guesses: ${guesses.length} Hints: ${hintsUsed}`;
 }
 
+let revealedClues = []; // Track revealed clues
+let clueIndex = 3; // Start revealing clues after the first 3 (we've already displayed ranks 23, 24, 25)
+
+// Function to render the first set of clues from ranks 23, 24, 25
 function renderClues() {
   const clueContainer = document.getElementById("clues");
   clueContainer.innerHTML = "";
-  for (let i = 0; i < visibleClueCount && i < allClueWords.length; i++) {
+
+  // Sort the words by rank and pick the words at ranks 23, 24, 25
+  const sortedWords = Object.entries(currentRanking)
+    .sort((a, b) => a[1] - b[1]) // Sort by ranking, ascending
+    .map(([word, rank]) => ({ word, rank }));
+
+  // Select clues at ranks 23, 24, and 25
+  const firstThreeClues = sortedWords.filter(({ rank }) => rank >= 23 && rank <= 25).slice(0, 3);
+
+  // Add the first 3 clues (ranks 23, 24, 25)
+  for (let i = 0; i < firstThreeClues.length; i++) {
     const span = document.createElement("div");
     span.className = "clue";
-    span.innerText = allClueWords[i];
+    span.innerText = normalizeWord(firstThreeClues[i].word); // Normalize the clue
     clueContainer.appendChild(span);
+    revealedClues.push(firstThreeClues[i].word); // Track revealed clues
   }
+}
 
-  if (visibleClueCount >= allClueWords.length) {
-    const hintBtn = document.querySelector("button[onclick='getHint()']");
-    if (hintBtn) hintBtn.disabled = true;
-    const message = document.createElement("div");
-    message.style.marginTop = "10px";
-    message.style.color = "#555";
-    message.innerText = "No more clues available.";
-    document.getElementById("input-area").appendChild(message);
+// Function to reveal the next clue when "Get another clue" is clicked
+function getHint() {
+  const clueContainer = document.getElementById("clues");
+
+  // Only get a clue if there's a next clue to reveal (after the first 3 clues)
+  if (clueIndex < currentRanking.length) {
+    // Get the clues from ranks below 23 or above 25
+    const sortedWords = Object.entries(currentRanking)
+      .sort((a, b) => a[1] - b[1]) // Sort by ranking, ascending
+      .map(([word, rank]) => ({ word, rank }));
+
+    // Select clues ranked below 23 or above 25
+    const nextClue = sortedWords.filter(({ rank }) => (rank < 23 || rank > 25))[clueIndex - 3]; // Start after the first 3
+
+    if (nextClue) {
+      const span = document.createElement("div");
+      span.className = "clue";
+      span.innerText = normalizeWord(nextClue.word); // Normalize the clue
+      clueContainer.appendChild(span);
+
+      // Track the clue
+      revealedClues.push(nextClue.word);
+      clueIndex++; // Move to the next clue
+    }
   }
 }
 
@@ -211,15 +238,6 @@ function submitGuess() {
     clues.parentNode.insertBefore(congrats, clues);
 
     disableInputs();
-  }
-}
-
-function getHint() {
-  if (visibleClueCount < allClueWords.length) {
-    visibleClueCount++;
-    hintsUsed++;
-    renderClues();
-    updateGuessStats();
   }
 }
 
