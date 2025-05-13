@@ -3,3 +3,4 @@ node_modules/
 GloVe/glove.6B.100d.txt
 GloVe/all_rankings.json
 GloVe/all_rankings_pretty.json
+.DS_Store
