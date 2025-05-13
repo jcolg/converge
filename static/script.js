@@ -1,17 +1,4 @@
-// script.js (updated for unlimited clues + numeric rank display)
-
-const today = new Date().toISOString().split("T")[0];
-function calculatePuzzleNumber() {
-  const startDate = new Date("2025-05-07");
-  const todayDate = new Date();
-  const diffTime = todayDate - startDate;
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays + 1;
-}
-
-const puzzleNumber = calculatePuzzleNumber();
-document.getElementById("puzzle-number").innerText = puzzleNumber;
-
+// script.js
 let guesses = [];
 let hintsUsed = 0;
 let answer = "";
@@ -20,20 +7,47 @@ let currentRanking = {};
 let allClueWords = [];
 let visibleClueCount = 3;
 
-const formattedDate = new Date().toLocaleDateString("en-US", {
-  weekday: "short",
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-});
-document.getElementById("date").innerText = formattedDate.replace(/^(\w+)\s/, "$1, ");
+// Initialize Day.js with UTC and timezone plugins
+dayjs.extend(dayjs_plugin_utc);
+dayjs.extend(dayjs_plugin_timezone);
 
+// Get the current date and time in the user's local timezone using Day.js
+const today = dayjs().tz(dayjs.tz.guess()).startOf('day');  // Get today's date at midnight in local time
+console.log('Current local time at midnight:', today.format()); // Debugging the local midnight time
+
+// Function to calculate the puzzle number based on the difference from the start date
+function calculatePuzzleNumber() {
+  // Set the start date to midnight local time using Day.js
+  const startDate = dayjs.tz("2025-05-07T00:00:00", dayjs.tz.guess()).startOf('day');
+  console.log('Start date:', startDate.format()); // Debugging the start date
+
+  // Calculate the difference in days between the current date and the start date
+  const diffDays = today.diff(startDate, 'day');  // Get the difference in days
+  console.log('Days difference:', diffDays); // Debugging the difference in days
+
+  return diffDays + 1;  // Puzzle number is 1-based
+}
+
+const puzzleNumber = calculatePuzzleNumber();
+document.getElementById("puzzle-number").innerText = puzzleNumber;
+
+// Display today's date in a readable format using Day.js
+const formattedDate = today.format("ddd, MMMM D, YYYY");
+document.getElementById("date").innerText = formattedDate;
+
+// Fetch puzzle data (assuming it loads based on today's date)
 document.getElementById("clues").innerText = "Loading puzzle...";
 
 fetch("puzzle_schedule.json")
   .then(res => res.json())
   .then(schedule => {
-    answer = schedule[today];
+    // Ensure the key used for the date matches the format (e.g., "2025-05-13")
+    const formattedToday = today.format("YYYY-MM-DD");  // Use the date in YYYY-MM-DD format
+    console.log('Formatted today:', formattedToday); // Debugging the formatted date
+    
+    answer = schedule[formattedToday];  // Fetch puzzle based on the formatted date
+    console.log('Puzzle answer:', answer); // Debugging the answer fetched
+    
     if (!answer) throw new Error("No answer found for today");
     return fetch(`rankings_split/${answer}.json`);
   })
@@ -53,7 +67,6 @@ fetch("puzzle_schedule.json")
     disableInputs();
     console.error("Puzzle load error:", err);
   });
-
 
 const guessInput = document.getElementById("guessInput");
 if (guessInput) {
