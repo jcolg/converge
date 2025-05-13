@@ -109,7 +109,7 @@ function getHint() {
 
   // Only get a clue if there's a next clue to reveal (after the first 3 clues)
   if (clueIndex < currentRanking.length) {
-    // Get the clues from ranks below 23 or above 25, excluding rank 1 (the answer)
+    // Get the clues from ranks below 23 or above 25
     const sortedWords = Object.entries(currentRanking)
       .sort((a, b) => a[1] - b[1]) // Sort by ranking, ascending
       .map(([word, rank]) => ({ word, rank }));
@@ -126,19 +126,37 @@ function getHint() {
       // Track the clue
       revealedClues.push(nextClue.word);
       clueIndex++; // Move to the next clue
+
+      // Increment hints used
+      hintsUsed++;
+      updateGuessStats();  // Update stats to reflect the new hint count
     }
   }
 }
 
+// Show the "How to play" section on the first load
+const howToPlaySection = document.getElementById("how-to-play");
+howToPlaySection.style.display = "block"; // Show instructions
+
+let firstGuessMade = false; // Flag to track if the first guess has been made
+
+// Listen for the first guess to hide the "How to play" section
 function submitGuess() {
   const input = document.getElementById("guessInput");
   const guess = normalizeWord(input.value.trim()); // Normalize the guess
+
   const feedback = document.getElementById("feedback-message") || document.createElement("div");
   feedback.id = "feedback-message";
   feedback.style.color = "#c00";
   feedback.style.marginBottom = "10px";
 
   if (!guess) return;
+
+  // If it's the first guess, hide the "How to play" section
+  if (!firstGuessMade) {
+    howToPlaySection.style.display = "none"; // Hide the instructions after the first guess
+    firstGuessMade = true; // Set the flag
+  }
 
   if (guesses.includes(guess)) {
     feedback.innerText = "You've already guessed that word.";
@@ -238,6 +256,18 @@ function submitGuess() {
     clues.parentNode.insertBefore(congrats, clues);
 
     disableInputs();
+  }
+}
+
+function toggleHowToPlay() {
+  const howToPlaySection = document.getElementById("how-to-play");
+  const isCurrentlyVisible = howToPlaySection.style.display === "block";
+  
+  // Toggle the display of the "How to Play" section
+  if (isCurrentlyVisible) {
+    howToPlaySection.style.display = "none"; // Hide
+  } else {
+    howToPlaySection.style.display = "block"; // Show
   }
 }
 

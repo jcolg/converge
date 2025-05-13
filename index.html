@@ -3,17 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Converge — Home</title>
-  <link rel="stylesheet" href="static/index.css"/>
+  <title>Converge</title>
+  <link rel="stylesheet" href="static/gameStyles.css"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/pluralize@8.0.0/pluralize.min.js"></script>
+
 </head>
 <body>
-  <div class="headline">3 clues. Unlimited guesses. How fast can you converge?</div>
-  <div class="subtext">
-    Guess the one word that all the clues have in common. Try to solve it in as few guesses and hints as possible!</div>
-  <a href="game.html">
-    <button class="play-btn">Play</button>
-  </a>
+  <h1>
+    <span>🧠 Converge</span>
+    <div id="how-to-play-icon" onclick="toggleHowToPlay()" style="cursor: pointer;">
+      <i class="fas fa-ellipsis-v"></i>
+    </div>
+  </h1>
+  <p><strong>Puzzle #<span id="puzzle-number"></span> - <span id="date"></span></strong></p>
+
+
+  <div id="clues">
+    <!-- Clues will be inserted here -->
+  </div>
+
+  <div id="how-to-play">
+    <h3>How to Play</h3>
+    <ul>
+      <li><strong>Goal:</strong> Guess the one word that all the clues have in common. You have <strong>unlimited guesses</strong>.</li>
+      <li><strong>Ranking:</strong> Words are ranked based on how similar they are to the secret word. The closer a word is to the secret word, the <strong>lower</strong> its rank will be (ranked <strong>#1</strong>).</li>
+      <li><strong>Clues:</strong> After each guess, you’ll see its rank. The words are sorted using an <strong>AI algorithm</strong> that analyzes the similarity based on context and usage.</li>
+      <li><strong>Start Guessing:</strong> Make guesses and use the <strong>rankings</strong> to guide you towards the secret word!</li>
+    </ul>
+  </div>
+
+  <div id="input-area">
+    <input type="text" id="guessInput" placeholder="Enter your guess..." />
+    <button onclick="submitGuess()">Submit</button>
+    <button onclick="getHint()">Get Another Clue</button>
+  </div>
+
+  <div id="guess-log">
+    <!-- <h3>Guesses</h3> -->
+    <h3 id="guess-stats">Guesses: 0 Hints: 0</h3>
+    <div id="guesses"></div>
+  </div>
+
+  <div id="score-area"></div>
+
+  <script src="static/script.js"></script>
 </body>
 </html>
-
