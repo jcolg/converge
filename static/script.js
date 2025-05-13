@@ -65,6 +65,18 @@ if (guessInput) {
   });
 }
 
+// Normalize input word (handles plurals)
+function normalizeWord(word) {
+  word = word.toLowerCase();
+  
+  // Check for plural forms (words ending in "s" or "es")
+  if ((word.endsWith('es') && word.length > 2) || (word.endsWith('s') && word.length > 1)) {
+    return word.slice(0, -1); // Remove 's' or 'es' if it's plural (e.g., "puzzles" -> "puzzle")
+  } else {
+    return word; // If no plural form, return as is
+  }
+}
+
 function updateGuessStats() {
   const stats = document.getElementById("guess-stats");
   stats.innerText = `Guesses: ${guesses.length} Hints: ${hintsUsed}`;
@@ -93,7 +105,7 @@ function renderClues() {
 
 function submitGuess() {
   const input = document.getElementById("guessInput");
-  const guess = input.value.trim().toLowerCase();
+  const guess = normalizeWord(input.value.trim()); // Normalize the guess
   const feedback = document.getElementById("feedback-message") || document.createElement("div");
   feedback.id = "feedback-message";
   feedback.style.color = "#c00";
@@ -108,7 +120,17 @@ function submitGuess() {
     return;
   }
 
-  if (!(guess in currentRanking) && guess !== answer) {
+  // Normalize answer for comparison with guesses
+  const normalizedAnswer = normalizeWord(answer);
+
+  // Normalize the currentRanking keys and compare
+  const normalizedRanking = Object.keys(currentRanking).reduce((acc, word) => {
+    acc[normalizeWord(word)] = currentRanking[word];
+    return acc;
+  }, {});
+
+  // Check if the guess is either in currentRanking or is the correct answer
+  if (!(guess in normalizedRanking) && guess !== normalizedAnswer) {
     feedback.innerText = "Sorry! I don't know that word.";
     input.parentNode.insertBefore(feedback, input.nextSibling);
     input.focus();
@@ -127,7 +149,7 @@ function submitGuess() {
   guesses.push(guess);
   updateGuessStats();
 
-  const rank = guess === answer ? 1 : currentRanking[guess];
+  const rank = guess === normalizedAnswer ? 1 : normalizedRanking[guess];
   const rankDisplay = rank ? `#${rank}` : "(not ranked)";
 
   const guessLog = document.getElementById("guesses");
@@ -139,7 +161,7 @@ function submitGuess() {
   input.value = "";
   input.focus();
 
-  if (guess === answer) {
+  if (guess === normalizedAnswer) {
     const congrats = document.createElement("div");
     congrats.id = "congrats-message";
     congrats.style.fontWeight = "bold";
@@ -157,7 +179,7 @@ function submitGuess() {
 
     const tierCounts = { green: 0, yellow: 0, red: 0, gray: 0 };
     guesses.forEach(word => {
-      const r = word === answer ? 1 : currentRanking[word];
+      const r = word === normalizedAnswer ? 1 : normalizedRanking[word];
       if (!r) {
         tierCounts.gray++;
         return;
