@@ -91,7 +91,7 @@ function updateGuessStats() {
 }
 
 let revealedClues = []; // Track revealed clues
-let clueIndex = 3; // Start revealing clues after the first 3 (we've already displayed ranks 23, 24, 25)
+let clueIndex = 3; // Start revealing clues after the first 3 (ranks 23, 24, 25)
 
 // Function to render the first set of clues from ranks 23, 24, 25
 function renderClues() {
@@ -122,22 +122,26 @@ function getHint() {
 
   // Only get a clue if there's a next clue to reveal (after the first 3 clues)
   if (clueIndex < currentRanking.length) {
-    // Get the clues from ranks below 23 or above 25
+    // Get the clues from ranks below 23 or above 25, but avoid choosing ones too close to the answer
     const sortedWords = Object.entries(currentRanking)
       .sort((a, b) => a[1] - b[1]) // Sort by ranking, ascending
       .map(([word, rank]) => ({ word, rank }));
 
-    // Select clues ranked below 23 or above 25, excluding rank 1
-    const nextClue = sortedWords.filter(({ rank }) => (rank !== 1 && (rank < 23 || rank > 25)))[clueIndex - 3]; // Start after the first 3
+    // Select clues in a smaller range, excluding rank 1, and within ranks 10-40 (adjust for desired difficulty)
+    const validClues = sortedWords.filter(({ rank }) => rank !== 1 && (rank < 40 && rank > 10));
 
-    if (nextClue) {
+    // Add a condition to prevent pulling clues that are too close to the answer
+    const randomClue = validClues[Math.floor(Math.random() * validClues.length)];
+
+    // Check if the clue already exists, and if it does, pick another one
+    if (randomClue && !revealedClues.includes(randomClue.word)) {
       const span = document.createElement("div");
       span.className = "clue";
-      span.innerText = normalizeWord(nextClue.word); // Normalize the clue
+      span.innerText = normalizeWord(randomClue.word); // Normalize the clue
       clueContainer.appendChild(span);
 
       // Track the clue
-      revealedClues.push(nextClue.word);
+      revealedClues.push(randomClue.word);
       clueIndex++; // Move to the next clue
 
       // Increment hints used
@@ -210,12 +214,17 @@ function submitGuess() {
   const rank = guess === normalizedAnswer ? 1 : normalizedRanking[guess];
   const rankDisplay = rank ? `#${rank}` : "(not ranked)";
 
+  // Create a new entry for the guess
   const guessLog = document.getElementById("guesses");
   const entry = document.createElement("div");
   const colorClass = rank <= 499 ? "rank-green" : rank <= 4999 ? "rank-yellow" : "rank-red";
   entry.className = `guess-entry ${colorClass}`;
   entry.innerHTML = `<span class="guess-word">${guess}</span><span class="rank-display">${rankDisplay}</span>`;
-  guessLog.prepend(entry);
+  guessLog.appendChild(entry); // Use appendChild to avoid immediately adding to the top
+
+  // Sort guesses by rank
+  sortGuessesByRank();
+
   input.value = "";
   input.focus();
 
@@ -270,6 +279,23 @@ function submitGuess() {
 
     disableInputs();
   }
+}
+
+// Function to sort guesses by their rank (green, yellow, red)
+function sortGuessesByRank() {
+  const guessLog = document.getElementById("guesses");
+  const entries = Array.from(guessLog.getElementsByClassName("guess-entry"));
+
+  // Sort the entries based on rank
+  entries.sort((a, b) => {
+    const rankA = parseInt(a.querySelector(".rank-display").innerText.replace("#", ""));
+    const rankB = parseInt(b.querySelector(".rank-display").innerText.replace("#", ""));
+    return rankA - rankB;
+  });
+
+  // Clear the current guess log and append the sorted entries
+  guessLog.innerHTML = "";
+  entries.forEach(entry => guessLog.appendChild(entry));
 }
 
 function toggleHowToPlay() {
