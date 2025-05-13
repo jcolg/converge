@@ -1,9 +1,10 @@
-// script.js
-let guesses = [];
-let hintsUsed = 0;
+// Retrieve data from localStorage on page load
+let guesses = JSON.parse(localStorage.getItem('guesses')) || []; // Default to empty array if no data
+let hintsUsed = parseInt(localStorage.getItem('hintsUsed')) || 0; // Default to 0 if no data
+let revealedClues = JSON.parse(localStorage.getItem('revealedClues')) || []; // Store revealed clues (hints used)
 let answer = "";
-let allRankings = {};
 let currentRanking = {};
+let allRankings = {};
 let allClueWords = [];
 let visibleClueCount = 3;
 
@@ -12,20 +13,13 @@ dayjs.extend(dayjs_plugin_utc);
 dayjs.extend(dayjs_plugin_timezone);
 
 // Get the current date and time in the user's local timezone using Day.js
-const today = dayjs().tz(dayjs.tz.guess()).startOf('day');  // Get today's date at midnight in local time
-console.log('Current local time at midnight:', today.format()); // Debugging the local midnight time
+const today = dayjs().tz(dayjs.tz.guess()).startOf('day'); // Get today's date at midnight in local time
 
 // Function to calculate the puzzle number based on the difference from the start date
 function calculatePuzzleNumber() {
-  // Set the start date to midnight local time using Day.js
   const startDate = dayjs.tz("2025-05-07T00:00:00", dayjs.tz.guess()).startOf('day');
-  console.log('Start date:', startDate.format()); // Debugging the start date
-
-  // Calculate the difference in days between the current date and the start date
-  const diffDays = today.diff(startDate, 'day');  // Get the difference in days
-  console.log('Days difference:', diffDays); // Debugging the difference in days
-
-  return diffDays + 1;  // Puzzle number is 1-based
+  const diffDays = today.diff(startDate, 'day');
+  return diffDays + 1;
 }
 
 const puzzleNumber = calculatePuzzleNumber();
@@ -35,19 +29,14 @@ document.getElementById("puzzle-number").innerText = puzzleNumber;
 const formattedDate = today.format("ddd, MMMM D, YYYY");
 document.getElementById("date").innerText = formattedDate;
 
-// Fetch puzzle data (assuming it loads based on today's date)
+// Fetch puzzle data
 document.getElementById("clues").innerText = "Loading puzzle...";
 
 fetch("puzzle_schedule.json")
   .then(res => res.json())
   .then(schedule => {
-    // Ensure the key used for the date matches the format (e.g., "2025-05-13")
-    const formattedToday = today.format("YYYY-MM-DD");  // Use the date in YYYY-MM-DD format
-    console.log('Formatted today:', formattedToday); // Debugging the formatted date
-    
-    answer = schedule[formattedToday];  // Fetch puzzle based on the formatted date
-    console.log('Puzzle answer:', answer); // Debugging the answer fetched
-    
+    const formattedToday = today.format("YYYY-MM-DD");
+    answer = schedule[formattedToday];
     if (!answer) throw new Error("No answer found for today");
     return fetch(`rankings_split/${answer}.json`);
   })
@@ -59,6 +48,7 @@ fetch("puzzle_schedule.json")
       .map(([word]) => word)
       .filter(word => word !== answer && !word.startsWith(answer) && !answer.startsWith(word));
     renderClues();
+    renderStoredGuesses(); // Render guesses when data is loaded
     updateGuessStats();
     document.getElementById("guessInput").focus();
   })
@@ -68,6 +58,7 @@ fetch("puzzle_schedule.json")
     console.error("Puzzle load error:", err);
   });
 
+// Event listener for submitting guesses
 const guessInput = document.getElementById("guessInput");
 if (guessInput) {
   guessInput.addEventListener("keydown", function (event) {
@@ -78,240 +69,335 @@ if (guessInput) {
   });
 }
 
-// Normalize input word (handles plurals)
+// Normalize input word
 function normalizeWord(word) {
-  // Use pluralize.js to convert plural to singular
-  const singular = pluralize.singular(word.toLowerCase());
-  return singular;
+  return pluralize.singular(word.toLowerCase());
 }
 
+// Update guess stats
 function updateGuessStats() {
   const stats = document.getElementById("guess-stats");
   stats.innerText = `Guesses: ${guesses.length} Hints: ${hintsUsed}`;
 }
 
-let revealedClues = []; // Track revealed clues
-let clueIndex = 3; // Start revealing clues after the first 3 (ranks 23, 24, 25)
-
-// Function to render the first set of clues from ranks 23, 24, 25
-function renderClues() {
-  const clueContainer = document.getElementById("clues");
-  clueContainer.innerHTML = "";
-
-  // Sort the words by rank and pick the words at ranks 23, 24, 25
-  const sortedWords = Object.entries(currentRanking)
-    .sort((a, b) => a[1] - b[1]) // Sort by ranking, ascending
-    .map(([word, rank]) => ({ word, rank }));
-
-  // Select clues at ranks 23, 24, and 25
-  const firstThreeClues = sortedWords.filter(({ rank }) => rank >= 23 && rank <= 25).slice(0, 3);
-
-  // Add the first 3 clues (ranks 23, 24, 25)
-  for (let i = 0; i < firstThreeClues.length; i++) {
-    const span = document.createElement("div");
-    span.className = "clue";
-    span.innerText = normalizeWord(firstThreeClues[i].word); // Normalize the clue
-    clueContainer.appendChild(span);
-    revealedClues.push(firstThreeClues[i].word); // Track revealed clues
+// Check if the "How to Play" section should be hidden or shown
+function toggleHowToPlay() {
+  const howToPlaySection = document.getElementById("how-to-play");
+  if (guesses.length > 0) {
+    howToPlaySection.style.display = "none";  // Hide "How to Play" section if game has started
+  } else {
+    howToPlaySection.style.display = "block"; // Show "How to Play" if no guesses have been made
   }
 }
 
-// Function to reveal the next clue when "Get another clue" is clicked
+let clueIndex = 3;
+let currentClueIndex = 0; // This will track the current clue in the ordered list
+
+// Render clues and store revealed ones
+function renderClues() {
+  const clueContainer = document.getElementById("clues");
+  clueContainer.innerHTML = "";  // Clear current clues
+
+  // Load the revealed clues from localStorage
+  revealedClues.forEach((clue) => {
+    const span = document.createElement("div");
+    span.className = "clue";
+    span.innerText = normalizeWord(clue);
+    clueContainer.appendChild(span);
+  });
+
+  // Now we'll reveal clues in a fixed order from the available ones, skipping rank 1 (answer)
+  const sortedWords = Object.entries(currentRanking)
+    .sort((a, b) => b[1] - a[1])  // Sort by rank in descending order (50 to 10)
+    .map(([word, rank]) => ({ word, rank }));
+
+  // Get the clues ranked 23, 24, and 25 for the initial reveal
+  const cluesToReveal = sortedWords.filter(({ rank }) => rank >= 23 && rank <= 25);
+
+  // Show the first 3 clues (these should be fixed)
+  for (let i = 0; i < cluesToReveal.length; i++) {
+    if (!revealedClues.includes(cluesToReveal[i].word)) {  // Check if the clue is not already in revealedClues
+      const span = document.createElement("div");
+      span.className = "clue";
+      span.innerText = normalizeWord(cluesToReveal[i].word);
+      clueContainer.appendChild(span);
+      revealedClues.push(cluesToReveal[i].word); // Store revealed clue
+    }
+  }
+
+  // Save the revealed clues to localStorage so they persist across reloads
+  localStorage.setItem('revealedClues', JSON.stringify(revealedClues));
+}
+
+// Get Another Hint function (now sequential instead of random)
 function getHint() {
   const clueContainer = document.getElementById("clues");
 
-  // Only get a clue if there's a next clue to reveal (after the first 3 clues)
-  if (clueIndex < currentRanking.length) {
-    // Get the clues from ranks below 23 or above 25, but avoid choosing ones too close to the answer
-    const sortedWords = Object.entries(currentRanking)
-      .sort((a, b) => a[1] - b[1]) // Sort by ranking, ascending
-      .map(([word, rank]) => ({ word, rank }));
+  // Check if there are more clues to reveal
+  const sortedWords = Object.entries(currentRanking)
+    .sort((a, b) => b[1] - a[1])  // Sort by rank in descending order (50 to 10)
+    .map(([word, rank]) => ({ word, rank }));
 
-    // Select clues in a smaller range, excluding rank 1, and within ranks 10-40 (adjust for desired difficulty)
-    const validClues = sortedWords.filter(({ rank }) => rank !== 1 && (rank < 40 && rank > 10));
+  // Filter out the answer (rank 1) and get the clues within the range 10 to 50
+  const cluesToReveal = sortedWords.filter(({ rank }) => rank >= 10 && rank <= 50);
 
-    // Add a condition to prevent pulling clues that are too close to the answer
-    const randomClue = validClues[Math.floor(Math.random() * validClues.length)];
+  // If we still have clues left to show, show the next one
+  if (currentClueIndex < cluesToReveal.length) {
+    const nextClue = cluesToReveal[currentClueIndex];
 
-    // Check if the clue already exists, and if it does, pick another one
-    if (randomClue && !revealedClues.includes(randomClue.word)) {
+    // Check if the clue is not already revealed and is not rank 1 (the answer)
+    if (nextClue && !revealedClues.includes(nextClue.word) && nextClue.rank !== 1) {
       const span = document.createElement("div");
       span.className = "clue";
-      span.innerText = normalizeWord(randomClue.word); // Normalize the clue
+      span.innerText = normalizeWord(nextClue.word);
       clueContainer.appendChild(span);
 
-      // Track the clue
-      revealedClues.push(randomClue.word);
-      clueIndex++; // Move to the next clue
+      revealedClues.push(nextClue.word);
+      currentClueIndex++;  // Move to the next clue index
 
-      // Increment hints used
       hintsUsed++;
-      updateGuessStats();  // Update stats to reflect the new hint count
+
+      updateGuessStats();
+
+      // Save hintsUsed to localStorage
+      localStorage.setItem('hintsUsed', hintsUsed);
+      // Save updated revealed clues to localStorage
+      localStorage.setItem('revealedClues', JSON.stringify(revealedClues));
     }
   }
 }
 
-// Show the "How to play" section on the first load
-const howToPlaySection = document.getElementById("how-to-play");
-howToPlaySection.style.display = "block"; // Show instructions
+// Function to save the guesses to localStorage
+function saveGuessesToLocalStorage() {
+  // Save guesses with their rank (word and rank)
+  localStorage.setItem('guesses', JSON.stringify(guesses));
+}
 
-let firstGuessMade = false; // Flag to track if the first guess has been made
+// Render stored guesses on page load
+function renderStoredGuesses() {
+  const guessLog = document.getElementById("guesses");
+  guessLog.innerHTML = "";  // Clear previous guesses
 
-// Listen for the first guess to hide the "How to play" section
+  // Sort the guesses array by rank in ascending order (smallest rank first)
+  const sortedGuesses = guesses.sort((a, b) => a.rank - b.rank);  // Ascending order
+
+  // Loop through sorted guesses and display them with the correct ranking
+  sortedGuesses.forEach(({ word, rank }) => {
+    const rankDisplay = rank ? `#${rank}` : "(not ranked)";
+    const entry = document.createElement("div");
+    const colorClass = rank <= 499 ? "rank-green" : rank <= 4999 ? "rank-yellow" : "rank-red";
+    entry.className = `guess-entry ${colorClass}`;
+    entry.innerHTML = `<span class="guess-word">${word}</span><span class="rank-display">${rankDisplay}</span>`;
+    guessLog.appendChild(entry);
+  });
+}
+
+let firstGuessMade = false;  // Flag to track if the first guess has been made
+let isPuzzleSolved = false;
+
+window.onload = function() {
+  isPuzzleSolved = localStorage.getItem("isPuzzleSolved") === "true";  // Check if the puzzle is solved
+  if (isPuzzleSolved) {
+    // If puzzle is solved, disable further inputs and show the congrats message
+    displayCongratsMessage();
+    disableInputs();
+  }
+};
+
+// Function to submit a guess
 function submitGuess() {
   const input = document.getElementById("guessInput");
-  const guess = normalizeWord(input.value.trim()); // Normalize the guess
+  const guess = normalizeWord(input.value.trim());
 
-  const feedback = document.getElementById("feedback-message") || document.createElement("div");
-  feedback.id = "feedback-message";
-  feedback.style.color = "#c00";
-  feedback.style.marginBottom = "10px";
+  // Clear any previous feedback message
+  const feedback = document.getElementById("feedback-message");
+  if (feedback) {
+    feedback.remove();
+  }
+
+  if (guess.split(/\s+/).length > 1) {
+    const feedback = document.createElement("div");
+    feedback.id = "feedback-message";
+    feedback.style.color = "#c00";
+    feedback.style.marginBottom = "10px";
+    feedback.innerText = "Sorry, only one-word answers are allowed.";
+    input.parentNode.insertBefore(feedback, input.nextSibling);
+    input.focus();
+    return; 
+  }
 
   if (!guess) return;
 
-  // If it's the first guess, hide the "How to play" section
-  if (!firstGuessMade) {
-    howToPlaySection.style.display = "none"; // Hide the instructions after the first guess
-    firstGuessMade = true; // Set the flag
-  }
+  if (isPuzzleSolved) return;
 
-  if (guesses.includes(guess)) {
+  // Check if the guess has already been made
+  if (guesses.some(g => g.word === guess)) {
+    const feedback = document.createElement("div");
+    feedback.id = "feedback-message";
+    feedback.style.color = "#c00";
+    feedback.style.marginBottom = "10px";
     feedback.innerText = "You've already guessed that word.";
     input.parentNode.insertBefore(feedback, input.nextSibling);
     input.focus();
     return;
   }
 
-  // Normalize answer for comparison with guesses
-  const normalizedAnswer = normalizeWord(answer);
+  const normalizedAnswer = normalizeWord(answer);  // Define normalizedAnswer here
 
-  // Normalize the currentRanking keys and compare
+  // Create normalizedRanking inside displayCongratsMessage to be used for tier counting
   const normalizedRanking = Object.keys(currentRanking).reduce((acc, word) => {
     acc[normalizeWord(word)] = currentRanking[word];
     return acc;
   }, {});
 
-  // Check if the guess is either in currentRanking or is the correct answer
+  // Check if the guess is not in the rankings and it's not the correct answer
   if (!(guess in normalizedRanking) && guess !== normalizedAnswer) {
+    const feedback = document.createElement("div");
+    feedback.id = "feedback-message";
+    feedback.style.color = "#c00";
+    feedback.style.marginBottom = "10px";
     feedback.innerText = "Sorry! I don't know that word.";
     input.parentNode.insertBefore(feedback, input.nextSibling);
     input.focus();
     return;
   }
 
-  if (guess.split(" ").length > 1) {
-    feedback.innerText = "Sorry! Only one word answers allowed.";
-    input.parentNode.insertBefore(feedback, input.nextSibling);
-    input.focus();
-    return;
-  } else {
-    feedback.remove();
-  }
+  // Proceed with guessing logic if valid word is found
+  const rank = guess === normalizedAnswer ? 1 : normalizedRanking[guess] || "(not ranked)";
 
-  guesses.push(guess);
+  // Save guess with its rank
+  guesses.push({ word: guess, rank });
+
+  // Save guesses to localStorage
+  saveGuessesToLocalStorage();
   updateGuessStats();
 
-  const rank = guess === normalizedAnswer ? 1 : normalizedRanking[guess];
-  const rankDisplay = rank ? `#${rank}` : "(not ranked)";
-
-  // Create a new entry for the guess
+  const rankDisplay = rank === "(not ranked)" ? rank : `#${rank}`;
   const guessLog = document.getElementById("guesses");
   const entry = document.createElement("div");
   const colorClass = rank <= 499 ? "rank-green" : rank <= 4999 ? "rank-yellow" : "rank-red";
   entry.className = `guess-entry ${colorClass}`;
   entry.innerHTML = `<span class="guess-word">${guess}</span><span class="rank-display">${rankDisplay}</span>`;
-  guessLog.appendChild(entry); // Use appendChild to avoid immediately adding to the top
+  guessLog.appendChild(entry);
 
-  // Sort guesses by rank
   sortGuessesByRank();
 
   input.value = "";
   input.focus();
 
+  // Hide "How to Play" after the first guess
+  if (!firstGuessMade) {
+    const howToPlaySection = document.getElementById("how-to-play");
+    howToPlaySection.style.display = "none";  // Hide the section
+    firstGuessMade = true;  // Set the flag to true so it won't show again
+  }
+
   if (guess === normalizedAnswer) {
-    const congrats = document.createElement("div");
-    congrats.id = "congrats-message";
-    congrats.style.fontWeight = "bold";
-    congrats.style.fontSize = "1.1rem";
-    congrats.style.marginTop = "10px";
-    congrats.style.marginBottom = "20px";
-    congrats.innerText = `🎉 Congrats! You solved puzzle #${puzzleNumber} in ${guesses.length} guess${guesses.length !== 1 ? 'es' : ''}, using ${hintsUsed} hint${hintsUsed !== 1 ? 's' : ''}.`;
+    isPuzzleSolved = true;
+    localStorage.setItem("isPuzzleSolved", "true");  // Save solved state in localStorage
 
-    const shareBtn = document.createElement("button");
-    shareBtn.innerText = "Share Result";
-    shareBtn.style.marginTop = "10px";
-    shareBtn.style.display = "block";
-    shareBtn.style.marginLeft = "auto";
-    shareBtn.style.marginRight = "auto";
-
-    const tierCounts = { green: 0, yellow: 0, red: 0, gray: 0 };
-    guesses.forEach(word => {
-      const r = word === normalizedAnswer ? 1 : normalizedRanking[word];
-      if (!r) {
-        tierCounts.gray++;
-        return;
-      }
-      if (r <= 499) tierCounts.green++;
-      else if (r <= 4999) tierCounts.yellow++;
-      else tierCounts.red++;
-    });
-
-    const emojiRows = [
-      tierCounts.green ? `🟢 ${tierCounts.green}` : null,
-      tierCounts.yellow ? `🟡 ${tierCounts.yellow}` : null,
-      tierCounts.red ? `🔴 ${tierCounts.red}` : null,
-    ].filter(Boolean).join("\n");
-
-    const summary = `I played Converge #${puzzleNumber} and solved it in ${guesses.length} guess${guesses.length !== 1 ? 'es' : ''}, using ${hintsUsed} hint${hintsUsed !== 1 ? 's' : ''}.\n\n${emojiRows}`;
-
-    shareBtn.onclick = () => {
-      navigator.clipboard.writeText(summary).then(() => {
-        shareBtn.innerText = "Copied!";
-        setTimeout(() => (shareBtn.innerText = "Share Result"), 2000);
-      });
-    };
-
-    congrats.appendChild(document.createElement("br"));
-    congrats.appendChild(shareBtn);
-
-    const clues = document.getElementById("clues");
-    clues.parentNode.insertBefore(congrats, clues);
+    // Show congrats message
+    displayCongratsMessage();
 
     disableInputs();
   }
 }
 
-// Function to sort guesses by their rank (green, yellow, red)
+function displayCongratsMessage() {
+  const normalizedAnswer = normalizeWord(answer);
+  const normalizedRanking = Object.keys(currentRanking).reduce((acc, word) => {
+    acc[normalizeWord(word)] = currentRanking[word];
+    return acc;
+  }, {});
+
+  const congrats = document.createElement("div");
+  congrats.id = "congrats-message";
+  congrats.style.fontWeight = "bold";
+  congrats.style.fontSize = "1.1rem";
+  congrats.style.marginTop = "10px";
+  congrats.style.marginBottom = "20px";
+  congrats.innerText = `🎉 Congrats! You solved puzzle #${puzzleNumber} in ${guesses.length} guess${guesses.length !== 1 ? 'es' : ''}, using ${hintsUsed} hint${hintsUsed !== 1 ? 's' : ''}.`;
+
+  const shareBtn = document.createElement("button");
+  shareBtn.innerText = "Share Result";
+  shareBtn.style.marginTop = "10px";
+  shareBtn.style.display = "block";
+  shareBtn.style.marginLeft = "auto";
+  shareBtn.style.marginRight = "auto";
+
+  const tierCounts = { green: 0, yellow: 0, red: 0, gray: 0 };
+
+  guesses.forEach(word => {
+    // Calculate the rank of each guess
+    const r = word.word === normalizedAnswer ? 1 : normalizedRanking[normalizeWord(word.word)];
+
+    if (!r) {
+      tierCounts.gray++;
+    } else if (r <= 499) {
+      tierCounts.green++;
+    } else if (r <= 4999) {
+      tierCounts.yellow++;
+    } else {
+      tierCounts.red++;
+    }
+  });
+
+  const emojiRows = [
+    tierCounts.green ? `🟢 ${tierCounts.green}` : null,
+    tierCounts.yellow ? `🟡 ${tierCounts.yellow}` : null,
+    tierCounts.red ? `🔴 ${tierCounts.red}` : null,
+  ].filter(Boolean).join("\n");
+
+  const summary = `I played Converge #${puzzleNumber} and solved it in ${guesses.length} guess${guesses.length !== 1 ? 'es' : ''}, using ${hintsUsed} hint${hintsUsed !== 1 ? 's' : ''}.\n\n${emojiRows}`;
+
+  shareBtn.onclick = () => {
+    navigator.clipboard.writeText(summary).then(() => {
+      shareBtn.innerText = "Copied!";
+      setTimeout(() => (shareBtn.innerText = "Share Result"), 2000);
+    });
+  };
+
+  congrats.appendChild(document.createElement("br"));
+  congrats.appendChild(shareBtn);
+
+  const clues = document.getElementById("clues");
+  clues.parentNode.insertBefore(congrats, clues);
+}
+
+// Function to save the guesses to localStorage
+function saveGuessesToLocalStorage() {
+  // Save guesses with their rank (word and rank)
+  localStorage.setItem('guesses', JSON.stringify(guesses));
+}
+
+// Sort guesses by rank
 function sortGuessesByRank() {
   const guessLog = document.getElementById("guesses");
   const entries = Array.from(guessLog.getElementsByClassName("guess-entry"));
 
-  // Sort the entries based on rank
+  // Sort in ascending order (smallest rank first)
   entries.sort((a, b) => {
     const rankA = parseInt(a.querySelector(".rank-display").innerText.replace("#", ""));
     const rankB = parseInt(b.querySelector(".rank-display").innerText.replace("#", ""));
-    return rankA - rankB;
+    return rankA - rankB;  // Ascending order
   });
 
-  // Clear the current guess log and append the sorted entries
   guessLog.innerHTML = "";
   entries.forEach(entry => guessLog.appendChild(entry));
-}
-
-function toggleHowToPlay() {
-  const howToPlaySection = document.getElementById("how-to-play");
-  const isCurrentlyVisible = howToPlaySection.style.display === "block";
-  
-  // Toggle the display of the "How to Play" section
-  if (isCurrentlyVisible) {
-    howToPlaySection.style.display = "none"; // Hide
-  } else {
-    howToPlaySection.style.display = "block"; // Show
-  }
 }
 
 function disableInputs() {
   document.getElementById("guessInput").disabled = true;
   document.querySelector("button[onclick='submitGuess()']").disabled = true;
   document.querySelector("button[onclick='getHint()']").disabled = true;
+
+  inputField.disabled = true;
+  submitButton.disabled = true;
+  getAnotherClueButton.disabled = true;
 }
+
+// Call the function to hide "How to Play" if the game has started
+toggleHowToPlay();
+
+// Render stored guesses
+renderStoredGuesses();
