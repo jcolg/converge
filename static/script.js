@@ -1,7 +1,9 @@
 // Retrieve data from localStorage on page load
 let guesses = JSON.parse(localStorage.getItem('guesses')) || []; // Default to empty array if no data
 let hintsUsed = parseInt(localStorage.getItem('hintsUsed')) || 0; // Default to 0 if no data
-let revealedClues = JSON.parse(localStorage.getItem('revealedClues')) || []; // Store revealed clues (hints used)
+let revealedClues = []; // Store revealed clues (hints used)
+let lastPuzzleDate = localStorage.getItem('lastPuzzleDate'); // Last date the puzzle was played
+let isPuzzleSolved = localStorage.getItem('isPuzzleSolved') === "true";  // Puzzle solved status
 let answer = "";
 let currentRanking = {};
 let allRankings = {};
@@ -14,6 +16,29 @@ dayjs.extend(dayjs_plugin_timezone);
 
 // Get the current date and time in the user's local timezone using Day.js
 const today = dayjs().tz(dayjs.tz.guess()).startOf('day'); // Get today's date at midnight in local time
+
+if (lastPuzzleDate !== today.format("YYYY-MM-DD")) {
+  console.log("New day detected. Resetting data...");
+  localStorage.removeItem('guesses');
+  localStorage.removeItem('hintsUsed');
+  localStorage.removeItem('revealedClues');
+  localStorage.removeItem('isPuzzleSolved');
+
+  revealedClues = [];  
+  console.log("Revealed clues after reset: ", revealedClues);
+
+  localStorage.setItem('lastPuzzleDate', today.format("YYYY-MM-DD"));
+  localStorage.setItem('isPuzzleSolved', 'false');
+
+  guesses = [];
+  hintsUsed = 0;
+  localStorage.setItem('guesses', JSON.stringify(guesses));
+  localStorage.setItem('hintsUsed', hintsUsed);
+} else {
+  revealedClues = JSON.parse(localStorage.getItem('revealedClues')) || [];
+}
+
+isPuzzleSolved = false;
 
 // Function to calculate the puzzle number based on the difference from the start date
 function calculatePuzzleNumber() {
@@ -96,7 +121,7 @@ let currentClueIndex = 0; // This will track the current clue in the ordered lis
 // Render clues and store revealed ones
 function renderClues() {
   const clueContainer = document.getElementById("clues");
-  clueContainer.innerHTML = "";  // Clear current clues
+  clueContainer.innerHTML = "";
 
   // Load the revealed clues from localStorage
   revealedClues.forEach((clue) => {
@@ -193,10 +218,12 @@ function renderStoredGuesses() {
 }
 
 let firstGuessMade = false;  // Flag to track if the first guess has been made
-let isPuzzleSolved = false;
+// let isPuzzleSolved = false;
 
 window.onload = function() {
   isPuzzleSolved = localStorage.getItem("isPuzzleSolved") === "true";  // Check if the puzzle is solved
+  console.log("isPuzzleSolved at page load: ", isPuzzleSolved);
+
   if (isPuzzleSolved) {
     // If puzzle is solved, disable further inputs and show the congrats message
     displayCongratsMessage();
@@ -387,10 +414,11 @@ function sortGuessesByRank() {
 }
 
 function disableInputs() {
-  document.getElementById("guessInput").disabled = true;
-  document.querySelector("button[onclick='submitGuess()']").disabled = true;
-  document.querySelector("button[onclick='getHint()']").disabled = true;
-
+  const inputField = document.getElementById("guessInput");
+  const submitButton = document.querySelector("button[onclick='submitGuess()']");
+  const getAnotherClueButton = document.querySelector("button[onclick='getHint()']");
+  
+  // Disable all input fields and buttons
   inputField.disabled = true;
   submitButton.disabled = true;
   getAnotherClueButton.disabled = true;
