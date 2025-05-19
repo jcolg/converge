@@ -105,13 +105,25 @@ function updateGuessStats() {
   stats.innerText = `Guesses: ${guesses.length} Hints: ${hintsUsed}`;
 }
 
-// Check if the "How to Play" section should be hidden or shown
+// Initialize the visibility of the "How to Play" section when the page loads
+function initializeHowToPlay() {
+  const howToPlaySection = document.getElementById("how-to-play");
+
+  if (guesses.length === 0) {
+    howToPlaySection.style.display = "block";
+  } else {
+    howToPlaySection.style.display = "none";
+  }
+}
+
+// Check if the "How to Play" section should be hidden or shown on button click
 function toggleHowToPlay() {
   const howToPlaySection = document.getElementById("how-to-play");
-  if (guesses.length > 0) {
-    howToPlaySection.style.display = "none";  // Hide "How to Play" section if game has started
+
+  if (howToPlaySection.style.display === "none") {
+    howToPlaySection.style.display = "block";
   } else {
-    howToPlaySection.style.display = "block"; // Show "How to Play" if no guesses have been made
+    howToPlaySection.style.display = "none";
   }
 }
 
@@ -224,6 +236,8 @@ window.onload = function() {
   isPuzzleSolved = localStorage.getItem("isPuzzleSolved") === "true";  // Check if the puzzle is solved
   console.log("isPuzzleSolved at page load: ", isPuzzleSolved);
 
+  initializeHowToPlay();
+  
   if (isPuzzleSolved) {
     // If puzzle is solved, disable further inputs and show the congrats message
     displayCongratsMessage();
