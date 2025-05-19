@@ -16,12 +16,11 @@ h1 {
   margin-bottom: 5px;
 }
 
-/* Position the three dots icon absolutely within the h1 */
 #how-to-play-icon {
-  position: absolute; /* Position it absolutely */
-  right: 20px; /* Place it 20px from the right side */
-  top: 50%; /* Center vertically */
-  transform: translateY(-50%); /* Adjust to be perfectly centered */
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
   cursor: pointer;
   font-size: 1.5rem;
 }
@@ -56,6 +55,30 @@ h1 {
   flex-direction: column;
   align-items: center;
   gap: 10px;
+}
+
+#input-area button {
+  flex-shrink: 0;
+}
+
+#input-area input {
+  width: 100%; 
+  max-width: 300px;
+  padding: 10px;
+  font-size: 1rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+#input-area .button-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px; 
+  width: 60%; 
+}
+
+#input-area .button-row button {
+  flex-shrink: 0; 
 }
 
 input[type="text"] {
@@ -155,6 +178,22 @@ button:disabled {
   border-left: 6px solid #f44336;
 }
 
+#answer-message {
+  background-color: #e0f7fa;
+  border: 2px solid #0288d1;
+  color: #01579b;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 1.2rem;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
 #congrats-message {
   background-color: #e6ffe6;
   border: 2px solid #4caf50;
@@ -191,7 +230,7 @@ button:disabled {
   }
 
   button {
-    width: 90%;
+    width: 80%;
     max-width: 300px;
   }
 

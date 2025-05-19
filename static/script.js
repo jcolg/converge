@@ -63,6 +63,10 @@ fetch("puzzle_schedule.json")
     const formattedToday = today.format("YYYY-MM-DD");
     answer = schedule[formattedToday];
     if (!answer) throw new Error("No answer found for today");
+    const giveUpState = localStorage.getItem("giveUpClicked");
+    if (giveUpState === "true") {
+      giveUp();
+    }
     return fetch(`rankings_split/${answer}.json`);
   })
   .then(res => res.json())
@@ -229,21 +233,33 @@ function renderStoredGuesses() {
   });
 }
 
-let firstGuessMade = false;  // Flag to track if the first guess has been made
-// let isPuzzleSolved = false;
+function giveUp() {
+  localStorage.setItem("giveUpClicked", "true");
+  disableInputs();
 
-window.onload = function() {
-  isPuzzleSolved = localStorage.getItem("isPuzzleSolved") === "true";  // Check if the puzzle is solved
-  console.log("isPuzzleSolved at page load: ", isPuzzleSolved);
+  const answerMessage = document.createElement("div");
+  answerMessage.id = "answer-message";
+  answerMessage.style.fontWeight = "bold";
+  answerMessage.style.fontSize = "1.1rem";
+  answerMessage.style.marginTop = "10px";
+  answerMessage.style.marginBottom = "20px";
+  answerMessage.innerText = answer ? `The answer was: ${answer}` : "The answer is still loading...";
 
+  const clues = document.getElementById("clues");
+  clues.parentNode.insertBefore(answerMessage, clues);
+}
+
+window.onload = function() {  
   initializeHowToPlay();
-  
+
   if (isPuzzleSolved) {
     // If puzzle is solved, disable further inputs and show the congrats message
     displayCongratsMessage();
     disableInputs();
   }
 };
+
+let firstGuessMade = false; 
 
 // Function to submit a guess
 function submitGuess() {
@@ -431,11 +447,13 @@ function disableInputs() {
   const inputField = document.getElementById("guessInput");
   const submitButton = document.querySelector("button[onclick='submitGuess()']");
   const getAnotherClueButton = document.querySelector("button[onclick='getHint()']");
+  const giveUpButton  = document.querySelector("button[onclick='giveUp()']");
   
   // Disable all input fields and buttons
   inputField.disabled = true;
   submitButton.disabled = true;
   getAnotherClueButton.disabled = true;
+  giveUpButton.disabled = true;
 }
 
 // Call the function to hide "How to Play" if the game has started

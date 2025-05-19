@@ -39,12 +39,14 @@
 
   <div id="input-area">
     <input type="text" id="guessInput" placeholder="Enter your guess..." />
-    <button onclick="submitGuess()">Submit</button>
+    <div class="button-row">
+      <button onclick="submitGuess()">Submit</button>
+      <button onclick="giveUp()">Give Up?</button>
+    </div>
     <button onclick="getHint()">Get Another Clue</button>
   </div>
-
+  
   <div id="guess-log">
-    <!-- <h3>Guesses</h3> -->
     <h3 id="guess-stats">Guesses: 0 Hints: 0</h3>
     <div id="guesses"></div>
   </div>
